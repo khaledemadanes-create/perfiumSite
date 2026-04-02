@@ -6,15 +6,17 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const app = express();
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 const DASHBOARD_PASSWORD = "admin123";
 const AUTH_COOKIE = "dashboard_auth";
+const viewsDir = path.join(__dirname, "views");
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
 
 function isDashboardAuthenticated(req) {
   const cookieHeader = req.headers.cookie || "";
@@ -22,6 +24,14 @@ function isDashboardAuthenticated(req) {
     .split(";")
     .map((part) => part.trim())
     .some((part) => part === `${AUTH_COOKIE}=1`);
+}
+
+function buildAuthCookie(req) {
+  const parts = [`${AUTH_COOKIE}=1`, "Path=/", "HttpOnly", "SameSite=Lax"];
+  if (req.secure) {
+    parts.push("Secure");
+  }
+  return parts.join("; ");
 }
 
 const orderSchema = new mongoose.Schema(
@@ -96,17 +106,17 @@ app.delete("/api/orders/:id", async (req, res) => {
 });
 
 app.get("/login", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  res.sendFile(path.join(viewsDir, "login.html"));
 });
 
 app.post("/login", (req, res) => {
   const { password } = req.body;
 
   if (password !== DASHBOARD_PASSWORD) {
-    return res.status(401).sendFile(path.join(__dirname, "public", "login.html"));
+    return res.status(401).sendFile(path.join(viewsDir, "login.html"));
   }
 
-  res.setHeader("Set-Cookie", `${AUTH_COOKIE}=1; Path=/; HttpOnly; SameSite=Lax`);
+  res.setHeader("Set-Cookie", buildAuthCookie(req));
   return res.redirect("/dashboard");
 });
 
@@ -115,12 +125,22 @@ app.get("/dashboard", (req, res) => {
     return res.redirect("/login");
   }
 
-  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+  res.sendFile(path.join(viewsDir, "dashboard.html"));
+});
+
+app.get("/dashboard.html", (_req, res) => {
+  res.redirect(301, "/dashboard");
+});
+
+app.get("/login.html", (_req, res) => {
+  res.redirect(301, "/login");
 });
 
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+app.use(express.static(path.join(__dirname, "public")));
 
 if (!MONGODB_URI) {
   console.error("MongoDB connection failed: MONGODB_URI is not set.");
