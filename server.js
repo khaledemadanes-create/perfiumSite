@@ -34,6 +34,21 @@ function buildAuthCookie(req) {
   return parts.join("; ");
 }
 
+/** Clears the auth cookie so the next visit to /dashboard requires the password again. */
+function buildClearAuthCookie(req) {
+  const parts = [
+    `${AUTH_COOKIE}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+  ];
+  if (req.secure) {
+    parts.push("Secure");
+  }
+  return parts.join("; ");
+}
+
 const orderSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -125,6 +140,7 @@ app.get("/dashboard", (req, res) => {
     return res.redirect("/login");
   }
 
+  res.setHeader("Set-Cookie", buildClearAuthCookie(req));
   res.sendFile(path.join(viewsDir, "dashboard.html"));
 });
 
