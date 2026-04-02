@@ -1,26 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PerfiumSite - Orders Dashboard</title>
+    <title>Perfium — لوحة الطلبات</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         margin: 40px auto;
-        max-width: 900px;
+        max-width: 1100px;
         padding: 0 16px;
       }
       table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 16px;
+        font-size: 0.9rem;
       }
       th,
       td {
         border: 1px solid #ddd;
         padding: 10px;
-        text-align: left;
+        text-align: right;
+        vertical-align: top;
       }
       th {
         background: #f4f4f4;
@@ -41,26 +43,31 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
+      .items-cell {
+        max-width: 320px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
     </style>
   </head>
   <body>
-    <h1>Orders Dashboard</h1>
+    <h1>طلبات العملاء</h1>
     <div class="top-links">
-      <a href="/">Create new order</a>
+      <a href="/">العودة للمتجر</a>
     </div>
-    <button id="refreshButton">Refresh</button>
+    <button id="refreshButton">تحديث</button>
     <p id="status"></p>
 
     <table>
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Product</th>
-          <th>Price</th>
-          <th>Total Price</th>
-          <th>Created At</th>
-          <th>Actions</th>
+          <th>الاسم</th>
+          <th>الهاتف</th>
+          <th>العنوان</th>
+          <th>المنتجات</th>
+          <th>الإجمالي</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
         </tr>
       </thead>
       <tbody id="ordersTableBody"></tbody>
@@ -77,14 +84,29 @@
         return div.innerHTML;
       }
 
+      function formatItems(order) {
+        if (order.items && order.items.length) {
+          return order.items
+            .map(
+              (i) =>
+                `${i.product} ×${i.quantity} (${Number(i.price).toFixed(2)} ج.م/وحدة) = ${(Number(i.price) * Number(i.quantity)).toFixed(2)}`
+            )
+            .join("\n");
+        }
+        if (order.product) {
+          return `${order.product}\n(طلب قديم: سعر واحد ${Number(order.price || 0).toFixed(2)})`;
+        }
+        return "—";
+      }
+
       async function deleteOrder(id, rowEl) {
         const btn = rowEl.querySelector(".btn-delete");
         if (!btn || btn.disabled) return;
 
-        if (!confirm("Delete this order?")) return;
+        if (!confirm("حذف هذا الطلب؟")) return;
 
         btn.disabled = true;
-        statusText.textContent = "Deleting...";
+        statusText.textContent = "جاري الحذف...";
         try {
           const res = await fetch(`/api/orders/${encodeURIComponent(id)}`, {
             method: "DELETE",
@@ -94,16 +116,16 @@
             throw new Error("Delete failed");
           }
 
-          statusText.textContent = "Order deleted.";
+          statusText.textContent = "تم الحذف.";
           await loadOrders();
         } catch (error) {
-          statusText.textContent = "Error deleting order.";
+          statusText.textContent = "خطأ في الحذف.";
           btn.disabled = false;
         }
       }
 
       async function loadOrders() {
-        statusText.textContent = "Loading orders...";
+        statusText.textContent = "جاري التحميل...";
         try {
           const res = await fetch("/api/orders");
           if (!res.ok) {
@@ -114,7 +136,7 @@
           tableBody.innerHTML = "";
 
           if (!orders.length) {
-            tableBody.innerHTML = `<tr><td colspan="7">No orders found.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7">لا توجد طلبات.</td></tr>`;
           } else {
             for (const order of orders) {
               const id = order._id;
@@ -122,11 +144,11 @@
               tr.innerHTML = `
                 <td>${escapeHtml(order.name)}</td>
                 <td>${escapeHtml(order.phone)}</td>
-                <td>${escapeHtml(order.product)}</td>
-                <td>${Number(order.price).toFixed(2)}</td>
+                <td>${escapeHtml(order.address || "")}</td>
+                <td class="items-cell">${escapeHtml(formatItems(order)).replace(/\n/g, "<br/>")}</td>
                 <td>${Number(order.totalPrice).toFixed(2)}</td>
-                <td>${new Date(order.createdAt).toLocaleString()}</td>
-                <td><button type="button" class="btn-delete" data-id="${id}">Delete</button></td>
+                <td>${new Date(order.createdAt).toLocaleString("ar-EG")}</td>
+                <td><button type="button" class="btn-delete" data-id="${id}">حذف</button></td>
               `;
               tableBody.appendChild(tr);
 
@@ -136,9 +158,9 @@
             }
           }
 
-          statusText.textContent = `Loaded ${orders.length} order(s).`;
+          statusText.textContent = `تم تحميل ${orders.length} طلب(ات).`;
         } catch (error) {
-          statusText.textContent = "Error loading orders.";
+          statusText.textContent = "خطأ في تحميل الطلبات.";
         }
       }
 

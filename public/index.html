@@ -1,78 +1,374 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PerfiumSite - New Order</title>
+    <title>Perfium — المتجر</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 640px;
-        margin: 40px auto;
-        padding: 0 16px;
+      :root {
+        --bg: #f4f6fb;
+        --card: #fff;
+        --text: #1a1d26;
+        --muted: #5c6370;
+        --accent: #2563eb;
+        --accent-dark: #1d4ed8;
+        --border: #e2e6ef;
+        --danger: #b91c1c;
       }
-      form {
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.75rem;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 24px;
+        font-size: 0.95rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 28px 0 12px;
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .card h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .price {
+        font-weight: 700;
+        color: var(--accent-dark);
+      }
+      .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-weight: 600;
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn:hover {
+        background: var(--accent-dark);
+      }
+      .btn-ghost {
+        background: #eef2ff;
+        color: var(--accent-dark);
+      }
+      .btn-ghost:hover {
+        background: #e0e7ff;
+      }
+      .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .cart-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .cart-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+      }
+      @media (max-width: 520px) {
+        .cart-card {
+          grid-template-columns: 1fr;
+        }
+      }
+      .cart-card .info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .cart-card .row-price {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .qty {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .qty span {
+        min-width: 2ch;
+        text-align: center;
+        font-weight: 700;
+      }
+      .total-bar {
+        margin-top: 16px;
+        padding: 16px;
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1rem;
+      }
+      .total-bar strong {
+        color: var(--accent-dark);
+        font-size: 1.25rem;
+      }
+      .checkout {
+        margin-top: 24px;
+        background: var(--card);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+      .checkout h2 {
+        margin-top: 0;
+      }
+      .checkout form {
         display: grid;
         gap: 12px;
       }
-      input,
-      button {
-        padding: 10px;
+      .checkout input,
+      .checkout textarea {
+        width: 100%;
+        padding: 10px 12px;
         font-size: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
       }
-      button {
-        cursor: pointer;
-      }
-      .links {
-        margin-top: 16px;
+      .checkout textarea {
+        min-height: 80px;
+        resize: vertical;
       }
       #message {
         margin-top: 12px;
+        font-size: 0.95rem;
+      }
+      .empty-cart {
+        color: var(--muted);
+        padding: 16px;
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px dashed var(--border);
+        text-align: center;
       }
     </style>
   </head>
   <body>
-    <h1>Create Order</h1>
+    <div class="wrap">
+      <h1>متجر Perfium</h1>
+      <p class="sub">اختر المنتجات وأضفها للسلة، ثم أكمل بياناتك لإرسال الطلب.</p>
 
-    <form id="orderForm">
-      <input type="text" id="name" placeholder="Customer name" required />
-      <input type="text" id="phone" placeholder="Phone number" required />
-      <input type="text" id="product" placeholder="Product name" required />
-      <input
-        type="number"
-        id="price"
-        placeholder="Product price"
-        min="0"
-        step="0.01"
-        required
-      />
-      <input
-        type="number"
-        id="totalPrice"
-        placeholder="Total price"
-        min="0"
-        step="0.01"
-        required
-      />
-      <button type="submit">Submit Order</button>
-    </form>
+      <h2>المنتجات</h2>
+      <div class="grid" id="productGrid"></div>
 
-    <p id="message"></p>
+      <h2>السلة</h2>
+      <div id="cartContainer"></div>
+      <div id="totalBarWrap" class="total-bar" style="display: none">
+        <span>إجمالي الطلب</span>
+        <strong id="totalPriceEl">0.00 ج.م</strong>
+      </div>
+
+      <div class="checkout">
+        <h2>إتمام الطلب</h2>
+        <form id="checkoutForm">
+          <input type="text" id="custName" placeholder="الاسم الكامل" required />
+          <input type="tel" id="custPhone" placeholder="رقم الهاتف" required />
+          <textarea id="custAddress" placeholder="العنوان بالتفصيل" required></textarea>
+          <button type="submit" class="btn" id="submitBtn">إرسال الطلب</button>
+        </form>
+        <p id="message"></p>
+      </div>
+    </div>
+
     <script>
-      const form = document.getElementById("orderForm");
-      const message = document.getElementById("message");
+      /** عدّل القائمة حسب منتجاتك الحقيقية */
+      const PRODUCTS = [
+        { id: "p1", name: "عطر فاخر — Edition", price: 450 },
+        { id: "p2", name: "ماء عطر — Silver", price: 320 },
+        { id: "p3", name: "مجموعة عناية — Kit", price: 280 },
+        { id: "p4", name: "عطر صيفي — Breeze", price: 195 },
+      ];
 
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        message.textContent = "Saving...";
+      /** سلّة: مفتاح = id المنتج، القيمة = { id, name, price, quantity } */
+      let cart = {};
+
+      const productGrid = document.getElementById("productGrid");
+      const cartContainer = document.getElementById("cartContainer");
+      const totalBarWrap = document.getElementById("totalBarWrap");
+      const totalPriceEl = document.getElementById("totalPriceEl");
+      const checkoutForm = document.getElementById("checkoutForm");
+      const messageEl = document.getElementById("message");
+
+      function renderProducts() {
+        productGrid.innerHTML = "";
+        for (const p of PRODUCTS) {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <h3>${escapeHtml(p.name)}</h3>
+            <div class="price">${formatMoney(p.price)}</div>
+            <button type="button" class="btn" data-add="${escapeAttr(p.id)}">أضف للسلة</button>
+          `;
+          div.querySelector("button").addEventListener("click", () => addToCart(p.id));
+          productGrid.appendChild(div);
+        }
+      }
+
+      function addToCart(productId) {
+        const p = PRODUCTS.find((x) => x.id === productId);
+        if (!p) return;
+        if (!cart[p.id]) {
+          cart[p.id] = { id: p.id, name: p.name, price: p.price, quantity: 1 };
+        } else {
+          cart[p.id].quantity += 1;
+        }
+        renderCart();
+      }
+
+      function changeQty(productId, delta) {
+        const row = cart[productId];
+        if (!row) return;
+        row.quantity += delta;
+        if (row.quantity < 1) {
+          delete cart[productId];
+        }
+        renderCart();
+      }
+
+      function removeLine(productId) {
+        delete cart[productId];
+        renderCart();
+      }
+
+      function cartLines() {
+        return Object.values(cart);
+      }
+
+      function cartTotal() {
+        return cartLines().reduce((s, row) => s + row.price * row.quantity, 0);
+      }
+
+      function renderCart() {
+        const lines = cartLines();
+        cartContainer.innerHTML = "";
+
+        if (!lines.length) {
+          cartContainer.innerHTML =
+            '<div class="empty-cart">السلة فارغة — أضف منتجات من الأعلى.</div>';
+          totalBarWrap.style.display = "none";
+          return;
+        }
+
+        const list = document.createElement("div");
+        list.className = "cart-list";
+
+        for (const row of lines) {
+          const lineTotal = row.price * row.quantity;
+          const div = document.createElement("div");
+          div.className = "cart-card";
+          div.innerHTML = `
+            <div class="info">
+              <strong>${escapeHtml(row.name)}</strong>
+              <div class="row-price">سعر الوحدة: ${formatMoney(row.price)} — الإجمالي: ${formatMoney(lineTotal)}</div>
+            </div>
+            <div class="qty">
+              <button type="button" class="btn btn-ghost btn-sm" data-minus="${escapeAttr(row.id)}">−</button>
+              <span>${row.quantity}</span>
+              <button type="button" class="btn btn-ghost btn-sm" data-plus="${escapeAttr(row.id)}">+</button>
+              <button type="button" class="btn btn-danger btn-sm" data-remove="${escapeAttr(row.id)}">حذف</button>
+            </div>
+          `;
+          div.querySelector(`[data-minus]`).addEventListener("click", () => changeQty(row.id, -1));
+          div.querySelector(`[data-plus]`).addEventListener("click", () => changeQty(row.id, 1));
+          div.querySelector(`[data-remove]`).addEventListener("click", () => removeLine(row.id));
+          list.appendChild(div);
+        }
+
+        cartContainer.appendChild(list);
+        totalBarWrap.style.display = "flex";
+        totalPriceEl.textContent = formatMoney(cartTotal());
+      }
+
+      function formatMoney(n) {
+        return `${Number(n).toFixed(2)} ج.م`;
+      }
+
+      function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function escapeAttr(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      checkoutForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        messageEl.textContent = "";
+
+        const lines = cartLines();
+        if (!lines.length) {
+          messageEl.textContent = "أضف منتجات للسلة قبل إرسال الطلب.";
+          return;
+        }
 
         const payload = {
-          name: document.getElementById("name").value.trim(),
-          phone: document.getElementById("phone").value.trim(),
-          product: document.getElementById("product").value.trim(),
-          price: Number(document.getElementById("price").value),
-          totalPrice: Number(document.getElementById("totalPrice").value),
+          name: document.getElementById("custName").value.trim(),
+          phone: document.getElementById("custPhone").value.trim(),
+          address: document.getElementById("custAddress").value.trim(),
+          items: lines.map((row) => ({
+            product: row.name,
+            price: row.price,
+            quantity: row.quantity,
+          })),
+          totalPrice: cartTotal(),
         };
+
+        const submitBtn = document.getElementById("submitBtn");
+        submitBtn.disabled = true;
+        messageEl.textContent = "جاري الإرسال...";
 
         try {
           const res = await fetch("/api/orders", {
@@ -81,16 +377,44 @@
             body: JSON.stringify(payload),
           });
 
-          if (!res.ok) {
-            throw new Error("Unable to save order.");
+          const rawText = await res.text();
+          let data = {};
+          try {
+            data = rawText ? JSON.parse(rawText) : {};
+          } catch {
+            data = {};
           }
 
-          form.reset();
-          message.textContent = "Order saved successfully.";
-        } catch (error) {
-          message.textContent = "Error saving order.";
+          if (!res.ok) {
+            const parts = [
+              data.message,
+              data.detail || data.error,
+            ].filter(Boolean);
+            const msg =
+              parts.join(" — ") ||
+              `خطأ ${res.status} — ${rawText.slice(0, 120) || "بدون تفاصيل"}`;
+            throw new Error(msg);
+          }
+
+          cart = {};
+          renderCart();
+          checkoutForm.reset();
+          messageEl.textContent = "تم استلام طلبك بنجاح. شكراً لك!";
+        } catch (err) {
+          const isNetwork =
+            err instanceof TypeError &&
+            (String(err.message).toLowerCase().includes("fetch") ||
+              String(err.message).toLowerCase().includes("network"));
+          messageEl.textContent = isNetwork
+            ? "مفيش اتصال بالسيرفر. افتح الموقع من رابط التشغيل (مثلاً Railway) مش من ملف على الجهاز، وتأكد إن التطبيق شغال."
+            : err.message || "حدث خطأ أثناء الإرسال.";
+        } finally {
+          submitBtn.disabled = false;
         }
       });
+
+      renderProducts();
+      renderCart();
     </script>
   </body>
 </html>

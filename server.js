@@ -49,13 +49,24 @@ function buildClearAuthCookie(req) {
   return parts.join("; ");
 }
 
+const cartItemSchema = new mongoose.Schema(
+  {
+    product: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
-    product: { type: String, required: true, trim: true },
-    price: { type: Number, required: true, min: 0 },
+    address: { type: String, trim: true, default: "" },
+    items: { type: [cartItemSchema], default: [] },
     totalPrice: { type: Number, required: true, min: 0 },
+    product: { type: String, trim: true },
+    price: { type: Number, min: 0 },
   },
   { timestamps: true }
 );
@@ -64,28 +75,62 @@ const Order = mongoose.model("Order", orderSchema);
 
 app.post("/api/orders", async (req, res) => {
   try {
-    const { name, phone, product, price, totalPrice } = req.body;
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const { name, phone, address, items } = body;
 
-    if (!name || !phone || !product || price == null || totalPrice == null) {
+    const nameTrim = String(name || "").trim();
+    const phoneTrim = String(phone || "").trim();
+    const addressTrim = String(address || "").trim();
+
+    if (!nameTrim || !phoneTrim || !addressTrim) {
       return res.status(400).json({
         message:
-          "name, phone, product, price, and totalPrice are all required.",
+          "اكمل الاسم ورقم الهاتف والعنوان (سطر العنوان ماينفع يكون فاضي).",
       });
     }
 
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        message: "السلة فاضية — أضف منتج واحد على الأقل قبل إرسال الطلب.",
+      });
+    }
+
+    const normalizedItems = items.map((row) => ({
+      product: String(row.product || "").trim(),
+      price: Number(row.price),
+      quantity: Math.max(1, Math.floor(Number(row.quantity))),
+    }));
+
+    if (
+      normalizedItems.some(
+        (row) => !row.product || Number.isNaN(row.price) || row.price < 0
+      )
+    ) {
+      return res.status(400).json({
+        message: "كل منتج لازم يكون له اسم وسعر صحيح.",
+      });
+    }
+
+    const totalPrice = normalizedItems.reduce(
+      (sum, row) => sum + row.price * row.quantity,
+      0
+    );
+
     const order = await Order.create({
-      name: String(name).trim(),
-      phone: String(phone).trim(),
-      product: String(product).trim(),
-      price: Number(price),
-      totalPrice: Number(totalPrice),
+      name: nameTrim,
+      phone: phoneTrim,
+      address: addressTrim,
+      items: normalizedItems,
+      totalPrice,
     });
 
     return res.status(201).json(order);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Failed to save order.", error: error.message });
+    console.error("POST /api/orders failed:", error);
+    return res.status(500).json({
+      message: "ما قدرناش نحفظ الطلب. جرّب تاني أو تأكد إن قاعدة البيانات متصلة.",
+      detail: error.message,
+    });
   }
 });
 
