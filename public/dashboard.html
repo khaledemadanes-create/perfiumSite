@@ -28,6 +28,19 @@
       .top-links {
         margin-bottom: 12px;
       }
+      .btn-delete {
+        padding: 6px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        color: #fff;
+        background: #b91c1c;
+        border: none;
+        border-radius: 6px;
+      }
+      .btn-delete:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -47,6 +60,7 @@
           <th>Price</th>
           <th>Total Price</th>
           <th>Created At</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="ordersTableBody"></tbody>
@@ -56,6 +70,37 @@
       const tableBody = document.getElementById("ordersTableBody");
       const statusText = document.getElementById("status");
       const refreshButton = document.getElementById("refreshButton");
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text == null ? "" : String(text);
+        return div.innerHTML;
+      }
+
+      async function deleteOrder(id, rowEl) {
+        const btn = rowEl.querySelector(".btn-delete");
+        if (!btn || btn.disabled) return;
+
+        if (!confirm("Delete this order?")) return;
+
+        btn.disabled = true;
+        statusText.textContent = "Deleting...";
+        try {
+          const res = await fetch(`/api/orders/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) {
+            throw new Error("Delete failed");
+          }
+
+          statusText.textContent = "Order deleted.";
+          await loadOrders();
+        } catch (error) {
+          statusText.textContent = "Error deleting order.";
+          btn.disabled = false;
+        }
+      }
 
       async function loadOrders() {
         statusText.textContent = "Loading orders...";
@@ -69,19 +114,25 @@
           tableBody.innerHTML = "";
 
           if (!orders.length) {
-            tableBody.innerHTML = `<tr><td colspan="6">No orders found.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7">No orders found.</td></tr>`;
           } else {
             for (const order of orders) {
+              const id = order._id;
               const tr = document.createElement("tr");
               tr.innerHTML = `
-                <td>${order.name}</td>
-                <td>${order.phone}</td>
-                <td>${order.product}</td>
+                <td>${escapeHtml(order.name)}</td>
+                <td>${escapeHtml(order.phone)}</td>
+                <td>${escapeHtml(order.product)}</td>
                 <td>${Number(order.price).toFixed(2)}</td>
                 <td>${Number(order.totalPrice).toFixed(2)}</td>
                 <td>${new Date(order.createdAt).toLocaleString()}</td>
+                <td><button type="button" class="btn-delete" data-id="${id}">Delete</button></td>
               `;
               tableBody.appendChild(tr);
+
+              tr.querySelector(".btn-delete").addEventListener("click", async () => {
+                await deleteOrder(id, tr);
+              });
             }
           }
 

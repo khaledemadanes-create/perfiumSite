@@ -75,6 +75,26 @@ app.get("/api/orders", async (_req, res) => {
   }
 });
 
+app.delete("/api/orders/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+
+    const deleted = await Order.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Failed to delete order.", error: error.message });
+  }
+});
+
 app.get("/login", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
