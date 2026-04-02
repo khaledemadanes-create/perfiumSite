@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PerfiumSite - Orders Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px auto;
+        max-width: 900px;
+        padding: 0 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background: #f4f4f4;
+      }
+      .top-links {
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Orders Dashboard</h1>
+    <div class="top-links">
+      <a href="/">Create new order</a>
+    </div>
+    <button id="refreshButton">Refresh</button>
+    <p id="status"></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Total Price</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTableBody"></tbody>
+    </table>
+
+    <script>
+      const tableBody = document.getElementById("ordersTableBody");
+      const statusText = document.getElementById("status");
+      const refreshButton = document.getElementById("refreshButton");
+
+      async function loadOrders() {
+        statusText.textContent = "Loading orders...";
+        try {
+          const res = await fetch("/api/orders");
+          if (!res.ok) {
+            throw new Error("Failed to load orders");
+          }
+
+          const orders = await res.json();
+          tableBody.innerHTML = "";
+
+          if (!orders.length) {
+            tableBody.innerHTML = `<tr><td colspan="6">No orders found.</td></tr>`;
+          } else {
+            for (const order of orders) {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${order.name}</td>
+                <td>${order.phone}</td>
+                <td>${order.product}</td>
+                <td>${Number(order.price).toFixed(2)}</td>
+                <td>${Number(order.totalPrice).toFixed(2)}</td>
+                <td>${new Date(order.createdAt).toLocaleString()}</td>
+              `;
+              tableBody.appendChild(tr);
+            }
+          }
+
+          statusText.textContent = `Loaded ${orders.length} order(s).`;
+        } catch (error) {
+          statusText.textContent = "Error loading orders.";
+        }
+      }
+
+      refreshButton.addEventListener("click", loadOrders);
+      loadOrders();
+    </script>
+  </body>
+</html>
