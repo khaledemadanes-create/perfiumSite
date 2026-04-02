@@ -8,11 +8,21 @@ const mongoose = require("mongoose");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const DASHBOARD_PASSWORD = "admin123";
+const AUTH_COOKIE = "dashboard_auth";
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
+function isDashboardAuthenticated(req) {
+  const cookieHeader = req.headers.cookie || "";
+  return cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .some((part) => part === `${AUTH_COOKIE}=1`);
+}
 
 const orderSchema = new mongoose.Schema(
   {
@@ -65,7 +75,26 @@ app.get("/api/orders", async (_req, res) => {
   }
 });
 
-app.get("/dashboard", (_req, res) => {
+app.get("/login", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.post("/login", (req, res) => {
+  const { password } = req.body;
+
+  if (password !== DASHBOARD_PASSWORD) {
+    return res.status(401).sendFile(path.join(__dirname, "public", "login.html"));
+  }
+
+  res.setHeader("Set-Cookie", `${AUTH_COOKIE}=1; Path=/; HttpOnly; SameSite=Lax`);
+  return res.redirect("/dashboard");
+});
+
+app.get("/dashboard", (req, res) => {
+  if (!isDashboardAuthenticated(req)) {
+    return res.redirect("/login");
+  }
+
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
