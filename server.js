@@ -3,49 +3,29 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_API_BASE_URL =
-  process.env.DATA_API_BASE_URL ||
-  "https://data.mongodb-api.com/app/data-/endpoint/data/v1";
-const DATA_API_KEY = process.env.DATA_API_KEY;
-const DATA_SOURCE = process.env.DATA_API_DATA_SOURCE || "Cluster0";
-const DATABASE_NAME = process.env.DATA_API_DATABASE || "perfiumSite";
-const ORDERS_COLLECTION = process.env.DATA_API_COLLECTION || "orders";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-async function callDataApi(action, payload) {
-  if (!DATA_API_KEY) {
-    throw new Error("Missing DATA_API_KEY environment variable.");
-  }
+const orderSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    product: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0 },
+    totalPrice: { type: Number, required: true, min: 0 },
+  },
+  { timestamps: true }
+);
 
-  const response = await fetch(`${DATA_API_BASE_URL}/action/${action}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": DATA_API_KEY,
-    },
-    body: JSON.stringify({
-      dataSource: DATA_SOURCE,
-      database: DATABASE_NAME,
-      collection: ORDERS_COLLECTION,
-      ...payload,
-    }),
-  });
-
-  const data = await response.json();
-  if (!response.ok || data.error) {
-    const message = data.error || data.error_code || "Atlas Data API request failed.";
-    throw new Error(message);
-  }
-
-  return data;
-}
+const Order = mongoose.model("Order", orderSchema);
 
 app.post("/api/orders", async (req, res) => {
   try {
@@ -58,19 +38,15 @@ app.post("/api/orders", async (req, res) => {
       });
     }
 
-    const order = {
+    const order = await Order.create({
       name: String(name).trim(),
       phone: String(phone).trim(),
       product: String(product).trim(),
       price: Number(price),
       totalPrice: Number(totalPrice),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    });
 
-    const result = await callDataApi("insertOne", { document: order });
-
-    return res.status(201).json({ _id: result.insertedId, ...order });
+    return res.status(201).json(order);
   } catch (error) {
     return res
       .status(500)
@@ -80,12 +56,8 @@ app.post("/api/orders", async (req, res) => {
 
 app.get("/api/orders", async (_req, res) => {
   try {
-    const result = await callDataApi("find", {
-      filter: {},
-      sort: { createdAt: -1 },
-    });
-
-    return res.json(result.documents || []);
+    const orders = await Order.find().sort({ createdAt: -1 });
+    return res.json(orders);
   } catch (error) {
     return res
       .status(500)
@@ -101,6 +73,20 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+if (!MONGODB_URI) {
+  console.error("MongoDB connection failed: MONGODB_URI is not set.");
+  process.exit(1);
+}
+
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log("MongoDB connected.");
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("MongoDB connection failed:", error.message);
+    process.exit(1);
+  });
